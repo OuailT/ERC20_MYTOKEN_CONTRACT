@@ -1,61 +1,55 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.5.0 <0.9.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.6;
 
-contract Lottery {
-    // variables storage // will be forever stored on the etherum blockchain
-    // using public or private doesn't inssure the security of the data inside my Contract
-    address public manager;
-    address payable[] public players;
-    
-    constructor() {
-        manager = msg.sender;
-    }
-    
-    function enter() public payable {
-        require(msg.value > .01 ether,
-                "A minimum payment of .01 ether must be sent to enter the lottery"
-        );
-        
-        players.push(payable(msg.sender));
-    }
-    
-    // to get a hash and convert it to random number using uint function
-    // Now => currentTime
-    function random() private view returns(uint256){
-       return
-            uint256(
-                keccak256(
-                    abi.encodePacked(block.difficulty, block.number, players)
-                )
-            );
-    }
-    
-    // Pick Winner function
-    function pickWinner()  public restricted {
-        // we use require so only the manager can call the function( to inforce security)
-        //  require(msg.sender == manager);
-        // to get a random players
-        uint256 index = random() % players.length;
 
-        // To get the address contract
-         address contractAddress = address(this);
+contract Alien {
+    string public name;
+    string public symbol;
+    uint256 public decimals;
+    uint256 public totalSupply;
 
-        // transfer the balance to winner
-        players[index].transfer(contractAddress.balance);
-        // Empty players arrays
-        players = new address payable[](0);
-    }
+    // to keeo track balances
+    mapping(address => uint256) public balanceOf;
+
+
+    // Fire event on state change and etc
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     
-    // modifier keywords allows us to not repeat the same code
-    modifier restricted()  {
-        require(msg.sender == manager);
-        _;
+    constructor(string memory _name, string memory _symbol, uint256 _decimals, uint256 _totalSupply ) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        totalSupply = _totalSupply;
+        // asign the total supply to the owner of the token
+        balanceOf[msg.sender] = totalSupply;
     }
 
-    // to get the list of all the players
-    function getPlayers() public view returns(address payable[] memory) {
-        return players;
+    // transfer amount of tokens to an address
+    /// @param _to receiver of token
+    /// @param _value amount value of token to send
+    /// @return success as true, for transfer
+    function transfer(address _to, uint256 _value) external returns (bool success) {
+        // Check if the address had token(_value) in the balance to transfer
+        require(balanceOf[msg.sender] >= _value);
+        _transfer(msg.sender, _to, _value);
+        return true; 
     }
-    
+
+
+    // Internal Helper function with safety check
+    function _transfer(address _from, address _to, uint256 _value) internal {
+        // check if the address is valid
+        require(_to != address(0));
+        // take the value from the accounts of the sender
+        balanceOf[_from] = balanceOf[_from] - (_value);
+        // add the value sent to the receiver
+        balanceOf[_to] = balanceOf[_to] + (_value);
+        emit Transfer(_from, _to, _value);
+    }
+
+
+
+
 
 }
